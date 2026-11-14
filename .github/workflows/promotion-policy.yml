@@ -1,0 +1,30 @@
+name: Promotion policy
+
+on:
+  pull_request:
+    branches: [TuA, main]
+
+permissions:
+  contents: read
+
+jobs:
+  promotion-policy:
+    name: Validate promotion source
+    runs-on: ubuntu-latest
+    env:
+      BASE_BRANCH: ${{ github.base_ref }}
+      HEAD_BRANCH: ${{ github.head_ref }}
+      HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+    steps:
+      - name: Require develop to TuA and TuA to main
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected=develop
+          if [[ "$BASE_BRANCH" == main ]]; then
+            expected=TuA
+          fi
+          if [[ "$HEAD_BRANCH" != "$expected" || "$HEAD_REPOSITORY" != "$GITHUB_REPOSITORY" ]]; then
+            echo "::error::PRs into $BASE_BRANCH must come from $GITHUB_REPOSITORY:$expected. Merge feature changes into develop first."
+            exit 1
+          fi
